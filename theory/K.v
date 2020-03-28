@@ -91,6 +91,10 @@ Definition ksize (a:K):K := match a with
 | A a => K1 | L _ n _ _ => A(ANu(J(I64.repr(Z.of_nat n))))
 end.
 
+Notation "#:" := (ksize)(at level 10).
+
+
+
 Fixpoint nullify (a:K):K := match a with
 | A(ANu(I _))=> A(ANu Oi)
 | A(ANu(J _))=> A(ANu Oj)
@@ -104,11 +108,14 @@ Definition khead (k:K):K := match k with
 | A _=> k | L t 0 a _=> nullify a | L t n a _=> a
 end.
 
+Notation "*:" := (khead)(at level 10).
+
 Definition krev (k:K):K := match k with
 | A _=> k | L t 0 a _=> k
 | L t n a bb=> let r:=rcons(rev bb)a in L t n (last a bb) (behead r)
 end.
 
+Notation "|:" := (krev)(at level 10).
 
 
 
@@ -128,17 +135,19 @@ Qed.
 
 
 
-Lemma krevK : involutive krev.
+Lemma krevK : involutive (|:).
 Proof.
 case=> t // n a aa. case: n=> //= n. by rewrite wtf_last wtf_behead.
 Qed.
 
-Lemma size_krev a : ksize (krev a) = ksize a.
+Lemma size_krev a : #:(|:a) = #:a.
 Proof. case: a=> // t n a aa. case: n=> //. Qed.
 
 
 Definition enlist (a:K):K := L TL 1 a [::].
 
-Lemma size_enlist a : ksize(enlist a) = K1.   Proof. by[]. Qed.
+Notation ",:" := (enlist)(at level 10).
+
+Lemma size_enlist a : #:(,:a) = K1.   Proof. by[]. Qed.
 
 
