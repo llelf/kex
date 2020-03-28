@@ -87,10 +87,8 @@ Qed.
 
 
 
-
-
-Definition ksize (a:K):nat := match a with
-| A a => 1 | L _ n _ _ => n
+Definition ksize (a:K):K := match a with
+| A a => K1 | L _ n _ _ => A(ANu(J(I64.repr(Z.of_nat n))))
 end.
 
 Fixpoint nullify (a:K):K := match a with
@@ -98,6 +96,9 @@ Fixpoint nullify (a:K):K := match a with
 | A(ANu(J _))=> A(ANu Oj)
 | L t n a aa => L t n (nullify a) (map nullify aa)
 end.
+
+
+(* Definition unil:K := L TL 0 _ [::]. *)
 
 Definition khead (k:K):K := match k with
 | A _=> k | L t 0 a _=> nullify a | L t n a _=> a
@@ -138,5 +139,6 @@ Proof. case: a=> // t n a aa. case: n=> //. Qed.
 
 Definition enlist (a:K):K := L TL 1 a [::].
 
-Lemma size_enlist a : ksize(enlist a) = 1.   Proof. by[]. Qed.
+Lemma size_enlist a : ksize(enlist a) = K1.   Proof. by[]. Qed.
+
 
