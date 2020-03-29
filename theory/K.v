@@ -20,6 +20,42 @@ Definition map := option_map.
 End opt.
 
 
+Module ne. Section ne.
+Variables A B: Type.
+Inductive NE A:= ne of A & seq A.
+
+Definition sing (a:A):= ne a [::].
+
+Definition map (f:A->B) (s:NE A):=
+  let '(ne a aa):=s in ne (f a) (seq.map f aa).
+
+Definition rev (s:NE A): NE A:=
+  let '(ne a bb):=s in let r:=rcons(rev bb)a in ne(last a bb)(behead r).
+
+Definition head '(ne a _):= a:A.
+
+Remark wtf_last (a:A)(aa:seq A) :
+  last(last a aa)(behead(rcons(seq.rev aa)a)) = a.
+Proof.
+rewrite -(revK aa); set r:=seq.rev aa; rewrite revK.
+by case: r=> //= r rr; rewrite rev_cons last_rcons.
+Qed.
+
+Remark wtf_behead (a:A)(aa:seq A) :
+  behead(rcons(seq.rev(behead(rcons(seq.rev aa)a))) (last a aa)) = aa.
+Proof.
+rewrite -(revK aa); set r:=seq.rev aa; rewrite revK.
+case: r=> //= r rr. by rewrite rev_cons last_rcons rev_rcons rcons_cons.
+Qed.
+
+Lemma revK (a:NE A): rev(rev a) = a.
+Proof.
+case: a=> //a l. by rewrite /rev wtf_last wtf_behead.
+Qed.
+End ne. End ne.
+Notation NE:=ne.NE.
+
+
 Module   I32:=Int.     Module   I64:=Int64.
 Notation i32:=I32.int. Notation i64:=I64.int.
 Notation "[i32 i m ]" := (I32.mkint i m).
@@ -32,7 +68,7 @@ Inductive At := ANu of Nu.
 Inductive Ty := Ti|Tj|TL.
 Inductive K :=
 | A of At
-| L of Ty & nat & K & seq K.
+| L of Ty & nat & NE K.
 
 Section arith.
 Definition ONi := I(I32.repr I32.min_signed).
@@ -94,68 +130,54 @@ End arith.
 Section ops.
 
 Definition ktype (a:K):Ty := match a with
-| A(ANu(I _))=>Ti | A(ANu(J _))=>Tj | L _ _ _ _=> TL
+| A(ANu(I _))=>Ti | A(ANu(J _))=>Tj | L _ _ _=> TL
 end.
 
 
 Definition ksize (a:K):K := match a with
-| A a => K1i | L _ n _ _ => Kiofnat n
+| A a => K1i | L _ n _ => Kiofnat n
 end.
 
 Notation "#:" := (ksize)(at level 10).
 
 
 
-Fixpoint nullify (a:K):K := match a with
+
+Fixpoint nullify a := match a with
 | A(ANu(I _))=> A(ANu Oi)
 | A(ANu(J _))=> A(ANu Oj)
-| L t n a aa => L t n (nullify a) (map nullify aa)
+| L t n aa   => L t n (ne.map nullify aa)
 end.
 
 
 (* Definition unil:K := L TL 0 _ [::]. *)
 
 Definition khead (k:K):K := match k with
-| A _=> k | L t 0 a _=> nullify a | L t n a _=> a
+| A _=> k | L t 0 a=> nullify (ne.head a) | L t n a=> ne.head a
 end.
 
 Notation "*:" := (khead)(at level 10).
 
 Definition krev (k:K):K := match k with
-| A _=> k | L t 0 a _=> k
-| L t n a bb=> let r:=rcons(rev bb)a in L t n (last a bb) (behead r)
+| A _=> k | L t 0 a=> k | L t n aa=> L t n (ne.rev aa)
 end.
 
 Notation "|:" := (krev)(at level 10).
 
 
 
-Remark wtf_last T (a:T)(aa:seq T) :
-  last (last a aa) (behead (rcons (rev aa) a)) = a.
-Proof.
-rewrite -(revK aa); set r:=rev aa; rewrite revK.
-by case: r=> //= r rr; rewrite rev_cons last_rcons.
-Qed.
-
-Remark wtf_behead T (a:T)(aa:seq T) :
-  behead (rcons (rev (behead (rcons (rev aa) a))) (last a aa)) = aa.
-Proof.
-rewrite -(revK aa); set r:=rev aa; rewrite revK.
-case: r=> //= r rr. by rewrite rev_cons last_rcons rev_rcons rcons_cons.
-Qed.
-
 
 
 Lemma krevK : involutive (|:).
 Proof.
-case=> t // n a aa. case: n=> //= n. by rewrite wtf_last wtf_behead.
+case=> t // n aa. case: n=> //= n. by rewrite ne.revK.
 Qed.
 
 Lemma size_krev a : #:(|:a) = #:a.
-Proof. case: a=> // t n a aa. case: n=> //. Qed.
+Proof. case: a=> // t n aa. case: n=> //. Qed.
 
 
-Definition enlist (a:K):K := L TL 1 a [::].
+Definition enlist (a:K):K := L TL 1 (ne.sing a).
 
 Notation ",:" := (enlist)(at level 10).
 
@@ -168,8 +190,7 @@ Notation "::" := (krconst)(at level 10).
 
 
 Definition izero := I32.eq I32.zero.
-Definition ipos := I32.lt I32.zero.
-Definition ineg := I32.lt^~I32.zero.
+Definition ipos := I32.lt I32.zero. Definition ineg := I32.lt^~I32.zero.
 
 Definition isI a := if a is A(ANu(I _)) then true else false.
 Definition isIpos a := if a is A(ANu(I n)) then ipos n else false.
@@ -178,10 +199,10 @@ Definition isIpos a := if a is A(ANu(I n)) then ipos n else false.
 Definition kiota (a:K):option K := match a with
   | A(ANu(I ni))=>
     if izero ni then
-      Some(L Ti 0 K0i nil)
+      Some(L Ti 0 (ne.sing K0i))
     else if ipos ni then
       let n:=Z.to_nat (I32.signed ni)
-      in Some(L Ti n K0i [seq Kiofnat i|i<-iota 1 n.-1])
+      in Some(L Ti n (ne.ne K0i [seq Kiofnat i|i<-iota 1 n.-1]))
     else None
   | _=> None
 end.
