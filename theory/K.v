@@ -39,7 +39,11 @@ Definition ONi := I(I32.repr I32.min_signed).
 Definition ONj := J(I64.repr I64.min_signed).
 Definition Oi := I I32.zero.
 Definition Oj := J I64.zero.
-Definition K0 := A(ANu Oj).  Definition K1 := A(ANu(J I64.one)).
+Definition K0j := A(ANu Oj).  Definition K1j := A(ANu(J I64.one)).
+Definition K0i := A(ANu Oi).  Definition K1i := A(ANu(I I32.one)).
+
+Definition Kiofnat (n:nat):K := A(ANu(I(I32.repr(Z.of_nat n)))).
+Definition Kjofnat (n:nat):K := A(ANu(J(I64.repr(Z.of_nat n)))).
 
 Definition iwiden (a:i32):i64 := I64.repr(I32.signed a).
 
@@ -49,7 +53,7 @@ Definition addnu a b := match a,b with
   | I i, J j => J(I64.add (iwiden i)j)
   | J i, I j => J(I64.add i(iwiden j)) end.
 
-Definition K2 := A(ANu(addnu (J I64.one) (J I64.one))).
+Definition K2j := Kjofnat 2.
 
 Definition eqnu a b := match a,b with
   | I i, I j => I32.eq i j
@@ -88,7 +92,7 @@ Qed.
 
 
 Definition ksize (a:K):K := match a with
-| A a => K1 | L _ n _ _ => A(ANu(J(I64.repr(Z.of_nat n))))
+| A a => K1i | L _ n _ _ => Kiofnat n
 end.
 
 Notation "#:" := (ksize)(at level 10).
@@ -148,6 +152,6 @@ Definition enlist (a:K):K := L TL 1 a [::].
 
 Notation ",:" := (enlist)(at level 10).
 
-Lemma size_enlist a : #:(,:a) = K1.   Proof. by[]. Qed.
+Lemma size_enlist a : #:(,:a) = K1i.  Proof. by[]. Qed.
 
 
