@@ -1,6 +1,6 @@
 From mathcomp   Require Import ssreflect ssrnat ssrbool ssrfun eqtype seq.
 From QuickChick Require Import QuickChick.
-From compcert   Require Import Integers.
+From compcert   Require Import Integers IEEE754_extra.
 From Hammer     Require Import Hammer Reconstr.
 From Coq        Require Import Program ZArith.
 
@@ -22,6 +22,10 @@ End opt.
 
 Module   I32:=Int.     Module   I64:=Int64.
 Notation i32:=I32.int. Notation i64:=I64.int.
+Notation "[i32 i m ]" := (I32.mkint i m).
+Notation "[i64 i m ]" := (I64.mkint i m).
+
+
 
 Inductive Nu := I of i32 | J of i64.
 Inductive At := ANu of Nu.
@@ -31,10 +35,7 @@ Inductive K :=
 | L of Ty & nat & K & seq K.
 
 
-Definition ktype (a:K):Ty := match a with
-| A(ANu(I _))=>Ti | A(ANu(J _))=>Tj | L _ _ _ _=> TL
-end.
-
+Section arith.
 Definition ONi := I(I32.repr I32.min_signed).
 Definition ONj := J(I64.repr I64.min_signed).
 Definition Oi := I I32.zero.
@@ -88,7 +89,14 @@ elim a=>i /=.
 - by rewrite/iwiden I64.add_zero I64.eq_true.
 by rewrite I64.add_zero I64.eq_true.
 Qed.
+End arith.
 
+
+Section ops.
+
+Definition ktype (a:K):Ty := match a with
+| A(ANu(I _))=>Ti | A(ANu(J _))=>Tj | L _ _ _ _=> TL
+end.
 
 
 Definition ksize (a:K):K := match a with
@@ -158,4 +166,6 @@ Lemma size_enlist a : #:(,:a) = K1i.  Proof. by[]. Qed.
 
 Definition krconst (a b:K):K := b.
 Notation "::" := (krconst)(at level 10).
+
+End ops.
 
