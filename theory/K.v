@@ -34,7 +34,6 @@ Inductive K :=
 | A of At
 | L of Ty & nat & K & seq K.
 
-
 Section arith.
 Definition ONi := I(I32.repr I32.min_signed).
 Definition ONj := J(I64.repr I64.min_signed).
@@ -167,5 +166,53 @@ Lemma size_enlist a : #:(,:a) = K1i.  Proof. by[]. Qed.
 Definition krconst (a b:K):K := b.
 Notation "::" := (krconst)(at level 10).
 
-End ops.
 
+Definition izero := I32.eq I32.zero.
+Definition ipos := I32.lt I32.zero.
+Definition ineg := I32.lt^~I32.zero.
+
+Definition isI a := if a is A(ANu(I _)) then true else false.
+Definition isIpos a := if a is A(ANu(I n)) then ipos n else false.
+
+
+Definition kiota (a:K):option K := match a with
+  | A(ANu(I ni))=>
+    if izero ni then
+      Some(L Ti 0 K0i nil)
+    else if ipos ni then
+      let n:=Z.to_nat (I32.signed ni)
+      in Some(L Ti n K0i [seq Kiofnat i|i<-iota 1 n.-1])
+    else None
+  | _=> None
+end.
+
+
+Notation "!:" := (kiota)(at level 10).
+
+
+
+
+Lemma i_dec (a:i32) : {a=I32.zero}
+                     +{izero a=false /\ ipos a /\ ineg a=false}
+                     +{izero a=false /\ ipos a=false /\ ineg a}.
+Admitted.
+
+
+Lemma size_kiota a : isIpos a -> option_map (#:)(!:a) = Some a.
+Proof.
+case: a=> //= a. case: a => // n. case: n=> //i POS.
+case: (i_dec i). case.
+- scrush.
+- case=> ->[] -> _ /=. rewrite/Kiofnat Z2Nat.id.
+  + by rewrite Int.repr_signed.
+  move:POS. rewrite/ipos.
+  ryreconstr (@Z.lt_le_incl, @I32.signed_zero) (@is_true, @I32.lt).
+scrush.
+Qed.
+
+
+(* Definition kfold (a f:K):K := match a with *)
+(*   | A a=> a | L _ _ a aa=> foldl  *)
+
+
+End ops.
