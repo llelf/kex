@@ -155,3 +155,7 @@ Notation ",:" := (enlist)(at level 10).
 Lemma size_enlist a : #:(,:a) = K1i.  Proof. by[]. Qed.
 
 
+
+Definition krconst (a b:K):K := b.
+Notation "::" := (krconst)(at level 10).
+
