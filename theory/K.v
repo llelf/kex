@@ -189,7 +189,9 @@ Fixpoint thread_a (f:At->At->option At) (a b: K) {struct a}: option K :=
   | L _ _ _, A b => map_a (f^~b) a
   | A a, L _ _ _ => map_a (f a) b
   | L ta na a, L tb nb b =>
-    option_map (L ta na) (NE.seqOpt (NE.zipWith (thread_a f) a b))
+    if na==nb then
+      option_map (L ta na) (NE.seqOpt (NE.zipWith (thread_a f) a b))
+    else None
   end.
 
 Definition addi (a b:At): option At :=
