@@ -37,10 +37,10 @@ Inductive ne A := mk of A & seq A.
 Definition sing (a:A) := mk a [::].
 
 Definition map (f:A->B) (s:ne A):=
-  let '(mk a aa):=s in mk (f a) (seq.map f aa).
+  let 'mk a aa:=s in mk (f a) (seq.map f aa).
 
 Definition rev (s:ne A): ne A :=
-  let '(mk a bb):=s in let r:=rcons(rev bb)a in mk(last a bb)(behead r).
+  let 'mk a bb:=s in let r:=rcons(rev bb)a in mk(last a bb)(behead r).
 
 Definition head '(mk a _) := a:A.
 
@@ -53,7 +53,7 @@ Definition seqOpt X (a:ne(option X)) : option(ne X) :=
   end.
 
 Definition zipWith (f:A->B->C) (a:ne A) (b:ne B): ne C :=
-  let '((mk a aa), (mk b bb)) := (a,b) in mk (f a b) (seqx.zipWith f aa bb).
+  let '(mk a aa, mk b bb) := (a,b) in mk (f a b) (seqx.zipWith f aa bb).
 
 
 Remark wtf_last (a:A)(aa:seq A) :
