@@ -91,14 +91,19 @@ Inductive K :=
 | A of At
 | L of Ty & nat & seq1 K.
 
+
+Definition nu2k    n := A(ANu n).             Coercion nu2k: Nu >-> K.
+Definition nat2i32 n := I32.repr(Z.of_nat n). Coercion nat2i32: nat >-> i32.
+Definition nat2i64 n := I64.repr(Z.of_nat n). Coercion nat2i64: nat >-> i64.
+
+
+
+
 Section arith.
 Definition ONi := I(I32.repr I32.min_signed).
 Definition ONj := J(I64.repr I64.min_signed).
-Definition Oi := I I32.zero.
-Definition Oj := J I64.zero.
 
-Definition Kiofnat (n:nat):K := A(ANu(I(I32.repr(Z.of_nat n)))).
-Definition Kjofnat (n:nat):K := A(ANu(J(I64.repr(Z.of_nat n)))).
+Definition Kiofnat (n:nat):K := I n.   Definition Kjofnat (n:nat):K := J n.
 
 Definition iwiden (a:i32):i64 := I64.repr(I32.signed a).
 
@@ -107,8 +112,6 @@ Definition addnu (a b:Nu) := match a,b with
   | J i, J j => J(I64.add i j)
   | I i, J j => J(I64.add (iwiden i)j)
   | J i, I j => J(I64.add i(iwiden j)) end.
-
-Definition K2j := Kjofnat 2.
 
 Definition eqnu (a b:Nu) := match a,b with
   | I i, I j => I32.eq i j
@@ -132,13 +135,13 @@ elim a=>i; elim b=>j => /=.
 by rewrite I64.add_commut.
 Qed.
 
-Lemma addnu0i a : addnu a Oi = a.
+Lemma addnu0i a : addnu a (I 0) = a.
 Proof.
 elim a=>i /=. by rewrite I32.add_zero.
 by rewrite/iwiden I32.signed_zero I64.add_zero.
 Qed.
 
-Lemma addnu0j a : eqnu (addnu a Oj) a.
+Lemma addnu0j a : eqnu (addnu a (J 0)) a.
 Proof.
 elim a=>i /=.
 - by rewrite/iwiden I64.add_zero I64.eq_true.
@@ -146,10 +149,8 @@ by rewrite I64.add_zero I64.eq_true.
 Qed.
 End arith.
 
-
-
-Definition K0j := A(ANu Oj).  Definition K1j := A(ANu(J I64.one)).
-Definition K0i := A(ANu Oi).  Definition K1i := A(ANu(I I32.one)).
+Definition K0j:K := J 0.  Definition K1j:K := J 1.
+Definition K0i:K := I 0.  Definition K1i:K := I 1.
 
 Definition K00i := L Ti 0 (NE.mk K0i  [::]).
 Definition K31i := L Ti 3 (NE.mk K1i  [::K1i;K1i]).
@@ -205,7 +206,7 @@ end.
 
 
 Definition ksize (a:K):K := match a with
-| A a => K1i | L _ n _ => Kiofnat n
+| A a => K1i | L _ n _ => I n
 end.
 
 Notation "#:" := (ksize)(at level 10).
@@ -214,8 +215,8 @@ Notation "#:" := (ksize)(at level 10).
 
 
 Fixpoint nullify a := match a with
-| A(ANu(I _))=> A(ANu Oi)
-| A(ANu(J _))=> A(ANu Oj)
+| A(ANu(I _))=> K0i
+| A(ANu(J _))=> K0j
 | L t n aa   => L t n (NE.map nullify aa)
 end.
 
@@ -259,12 +260,11 @@ Definition krconst (a b:K):K := b.
 Notation "::" := (krconst)(at level 10).
 
 
-Definition izero := I32.eq I32.zero.
-Definition ipos := I32.lt I32.zero.  Definition ineg := I32.lt^~I32.zero.
+Definition izero := I32.eq 0.
+Definition ipos  := I32.lt 0.  Definition ineg := I32.lt^~0.
 
 Definition isI a := if a is A(ANu(I _)) then true else false.
 Definition isIpos a := if a is A(ANu(I n)) then ipos n else false.
-
 
 Definition kiota (a:K):option K := match a with
   | A(ANu(I ni))=>
@@ -295,7 +295,7 @@ Proof.
 case: a=> //= a. case: a => // n. case: n=> //i POS.
 case: (i_dec i). case.
 - scrush.
-- case=> ->[] -> _ /=. rewrite/Kiofnat Z2Nat.id.
+- case=> ->[] -> _ /=. rewrite/nat2i32 Z2Nat.id.
   + by rewrite Int.repr_signed.
   move:POS. rewrite/ipos.
   ryreconstr (@Z.lt_le_incl, @I32.signed_zero) (@is_true, @I32.lt).
