@@ -2,7 +2,7 @@ From mathcomp   Require Import ssreflect ssrnat ssrbool ssrfun eqtype seq.
 From QuickChick Require Import QuickChick.
 From compcert   Require Import Integers IEEE754_extra.
 From Hammer     Require Import Hammer Reconstr.
-From Coq        Require Import Program ZArith.
+From Coq        Require Import ZArith.
 
 Set Implicit Arguments.            Unset Strict Implicit.
 Unset Printing Implicit Defensive. Set Bullet Behavior "None".
@@ -19,20 +19,33 @@ Definition sequenceA X (a:seq(option X)) : option(seq X) :=
 Definition map := option_map.
 End opt.
 
+Module seqx.
+Definition zipWith A B C (f: A->B->C) :=
+  fix zipWith (s: seq A) (t: seq B) {struct s}: seq C :=
+    match s, t with
+    | [::],_ | _,[::] => [::]
+    | x::s, y::t => f x y :: zipWith s t
+    end.
+End seqx.
 
-Module ne. Section ne.
-Variables A B: Type.
-Inductive NE A:= ne of A & seq A.
 
-Definition sing (a:A):= ne a [::].
+Module NE. Section NE.
+Variables A B C : Type.
+Inductive ne A := mk of A & seq A.
 
-Definition map (f:A->B) (s:NE A):=
-  let '(ne a aa):=s in ne (f a) (seq.map f aa).
+Definition sing (a:A) := mk a [::].
 
-Definition rev (s:NE A): NE A:=
-  let '(ne a bb):=s in let r:=rcons(rev bb)a in ne(last a bb)(behead r).
+Definition map (f:A->B) (s:ne A):=
+  let '(mk a aa):=s in mk (f a) (seq.map f aa).
 
-Definition head '(ne a _):= a:A.
+Definition rev (s:ne A): ne A :=
+  let '(mk a bb):=s in let r:=rcons(rev bb)a in mk(last a bb)(behead r).
+
+Definition head '(mk a _) := a:A.
+
+Definition zipWith (f:A->B->C) (a:ne A) (b:ne B): ne C :=
+  let '((mk a aa), (mk b bb)) := (a,b) in mk (f a b) (seqx.zipWith f aa bb).
+
 
 Remark wtf_last (a:A)(aa:seq A) :
   last(last a aa)(behead(rcons(seq.rev aa)a)) = a.
@@ -48,19 +61,18 @@ rewrite -(revK aa); set r:=seq.rev aa; rewrite revK.
 case: r=> //= r rr. by rewrite rev_cons last_rcons rev_rcons rcons_cons.
 Qed.
 
-Lemma revK (a:NE A): rev(rev a) = a.
+Lemma revK (a:ne A): rev(rev a) = a.
 Proof.
 case: a=> //a l. by rewrite /rev wtf_last wtf_behead.
 Qed.
-End ne. End ne.
-Notation NE:=ne.NE.
+End NE. End NE.
+Notation seq1:=NE.ne.
 
 
 Module   I32:=Int.     Module   I64:=Int64.
 Notation i32:=I32.int. Notation i64:=I64.int.
-Notation "[i32 i m ]" := (I32.mkint i m).
-Notation "[i64 i m ]" := (I64.mkint i m).
-
+Notation "[i32 i m ]" := (I32.mkint i m)(format "[i32  i  m ]").
+Notation "[i64 i m ]" := (I64.mkint i m)(format "[i64  i  m ]").
 
 
 Inductive Nu := I of i32 | J of i64.
@@ -68,7 +80,7 @@ Inductive At := ANu of Nu.
 Inductive Ty := Ti|Tj|TL.
 Inductive K :=
 | A of At
-| L of Ty & nat & NE K.
+| L of Ty & nat & seq1 K.
 
 Section arith.
 Definition ONi := I(I32.repr I32.min_signed).
@@ -83,7 +95,7 @@ Definition Kjofnat (n:nat):K := A(ANu(J(I64.repr(Z.of_nat n)))).
 
 Definition iwiden (a:i32):i64 := I64.repr(I32.signed a).
 
-Definition addnu a b := match a,b with
+Definition addnu (a b:Nu) := match a,b with
   | I i, I j => I(I32.add i j)
   | J i, J j => J(I64.add i j)
   | I i, J j => J(I64.add (iwiden i)j)
@@ -91,15 +103,16 @@ Definition addnu a b := match a,b with
 
 Definition K2j := Kjofnat 2.
 
-Definition eqnu a b := match a,b with
+Definition eqnu (a b:Nu) := match a,b with
   | I i, I j => I32.eq i j
   | J i, J j => I64.eq i j
   | I i, J j => I64.eq (iwiden i)j
   | J i, I j => I64.eq i(iwiden j)
 end.
 
-Lemma wide_range a: (I64.min_signed<=I32.signed a<=I64.max_signed)%Z.
+Lemma wide_range a: (I64.min_signed <= I32.signed a <= I64.max_signed)%Z.
 Admitted.
+
 
 Lemma addnuC a b : addnu a b = addnu b a.
 Proof.
@@ -129,6 +142,24 @@ End arith.
 
 Section ops.
 
+
+Fixpoint map_a (f:At->At) (x:K): K :=
+  match x with
+  | A n => A (f n)
+  | L t n (NE.mk h tl) =>
+    L t n (NE.mk (map_a f h) [seq map_a f t|t<-tl])
+  end.
+
+Fixpoint thread (f:At->At->At) (a b: K) {struct a}: K :=
+  match a, b with
+  | A a, A b     => A (f a b)
+  | L _ _ _, A b => map_a (f^~b) a
+  | A a, L _ _ _ => map_a (f a) b
+  | L ta na a, L tb nb b => L ta na (NE.zipWith (thread f) a b)
+  end.
+
+
+
 Definition ktype (a:K):Ty := match a with
 | A(ANu(I _))=>Ti | A(ANu(J _))=>Tj | L _ _ _=> TL
 end.
@@ -146,20 +177,20 @@ Notation "#:" := (ksize)(at level 10).
 Fixpoint nullify a := match a with
 | A(ANu(I _))=> A(ANu Oi)
 | A(ANu(J _))=> A(ANu Oj)
-| L t n aa   => L t n (ne.map nullify aa)
+| L t n aa   => L t n (NE.map nullify aa)
 end.
 
 
 (* Definition unil:K := L TL 0 _ [::]. *)
 
 Definition khead (k:K):K := match k with
-| A _=> k | L t 0 a=> nullify (ne.head a) | L t n a=> ne.head a
+| A _=> k | L t 0 a=> nullify (NE.head a) | L t n a=> NE.head a
 end.
 
 Notation "*:" := (khead)(at level 10).
 
 Definition krev (k:K):K := match k with
-| A _=> k | L t 0 a=> k | L t n aa=> L t n (ne.rev aa)
+| A _=> k | L t 0 a=> k | L t n aa=> L t n (NE.rev aa)
 end.
 
 Notation "|:" := (krev)(at level 10).
@@ -170,14 +201,14 @@ Notation "|:" := (krev)(at level 10).
 
 Lemma krevK : involutive (|:).
 Proof.
-case=> t // n aa. case: n=> //= n. by rewrite ne.revK.
+case=> t // n aa. case: n=> //= n. by rewrite NE.revK.
 Qed.
 
 Lemma size_krev a : #:(|:a) = #:a.
 Proof. case: a=> // t n aa. case: n=> //. Qed.
 
 
-Definition enlist (a:K):K := L TL 1 (ne.sing a).
+Definition enlist (a:K):K := L TL 1 (NE.sing a).
 
 Notation ",:" := (enlist)(at level 10).
 
@@ -199,10 +230,10 @@ Definition isIpos a := if a is A(ANu(I n)) then ipos n else false.
 Definition kiota (a:K):option K := match a with
   | A(ANu(I ni))=>
     if izero ni then
-      Some(L Ti 0 (ne.sing K0i))
+      Some(L Ti 0 (NE.sing K0i))
     else if ipos ni then
       let n:=Z.to_nat (I32.signed ni)
-      in Some(L Ti n (ne.ne K0i [seq Kiofnat i|i<-iota 1 n.-1]))
+      in Some(L Ti n (NE.mk K0i [seq Kiofnat i|i<-iota 1 n.-1]))
     else None
   | _=> None
 end.
@@ -214,9 +245,10 @@ Notation "!:" := (kiota)(at level 10).
 
 
 Lemma i_dec (a:i32) : {a=I32.zero}
-                     +{izero a=false /\ ipos a /\ ineg a=false}
-                     +{izero a=false /\ ipos a=false /\ ineg a}.
+                    + {izero a=false /\ ipos a /\ ineg a=false}
+                    + {izero a=false /\ ipos a=false /\ ineg a}.
 Admitted.
+
 
 
 Lemma size_kiota a : isIpos a -> option_map (#:)(!:a) = Some a.
