@@ -13,11 +13,9 @@ Fixpoint lift X Y Z (f:X->Y->Z) a b : option Z :=
                  | _,_ => None
   end.
 
-Definition sequenceA X (a:seq(option X)) : option(seq X) :=
-  foldr (lift cons) (Some[::]) a.
-
 Definition map := option_map.
 End opt.
+
 
 Module seqx.
 Definition zipWith A B C (f: A->B->C) :=
@@ -26,6 +24,9 @@ Definition zipWith A B C (f: A->B->C) :=
     | [::],_ | _,[::] => [::]
     | x::s, y::t => f x y :: zipWith s t
     end.
+
+Definition seqOpt X (a:seq(option X)) : option(seq X) :=
+  foldr (opt.lift cons) (Some[::]) a.
 End seqx.
 
 
@@ -42,6 +43,14 @@ Definition rev (s:ne A): ne A :=
   let '(mk a bb):=s in let r:=rcons(rev bb)a in mk(last a bb)(behead r).
 
 Definition head '(mk a _) := a:A.
+
+Definition tolist '(mk a aa) := a::aa : seq A.
+
+Definition seqOpt X (a:ne(option X)) : option(ne X) :=
+  match a with NE.mk None _ => None
+             | NE.mk (Some a) aa => if seqx.seqOpt aa is Some r
+                                    then Some(NE.mk a r) else None
+  end.
 
 Definition zipWith (f:A->B->C) (a:ne A) (b:ne B): ne C :=
   let '((mk a aa), (mk b bb)) := (a,b) in mk (f a b) (seqx.zipWith f aa bb).
@@ -87,8 +96,6 @@ Definition ONi := I(I32.repr I32.min_signed).
 Definition ONj := J(I64.repr I64.min_signed).
 Definition Oi := I I32.zero.
 Definition Oj := J I64.zero.
-Definition K0j := A(ANu Oj).  Definition K1j := A(ANu(J I64.one)).
-Definition K0i := A(ANu Oi).  Definition K1i := A(ANu(I I32.one)).
 
 Definition Kiofnat (n:nat):K := A(ANu(I(I32.repr(Z.of_nat n)))).
 Definition Kjofnat (n:nat):K := A(ANu(J(I64.repr(Z.of_nat n)))).
@@ -140,23 +147,53 @@ Qed.
 End arith.
 
 
+
+Definition K0j := A(ANu Oj).  Definition K1j := A(ANu(J I64.one)).
+Definition K0i := A(ANu Oi).  Definition K1i := A(ANu(I I32.one)).
+
+Definition K00i := L Ti 0 (NE.mk K0i  [::]).
+Definition K31i := L Ti 3 (NE.mk K1i  [::K1i;K1i]).
+Definition K331i:= L TL 3 (NE.mk K31i [::K31i;K31i]).
+
+
+
+
+
 Section ops.
 
 
-Fixpoint map_a (f:At->At) (x:K): K :=
+Fixpoint map_a1 (f:At->At) (x:K): K :=
   match x with
   | A n => A (f n)
-  | L t n (NE.mk h tl) =>
-    L t n (NE.mk (map_a f h) [seq map_a f t|t<-tl])
+  | L t n aa => L t n (NE.map (map_a1 f) aa)
   end.
 
-Fixpoint thread (f:At->At->At) (a b: K) {struct a}: K :=
+Fixpoint thread_a1 (f:At->At->At) (a b: K) {struct a}: K :=
   match a, b with
   | A a, A b     => A (f a b)
+  | L _ _ _, A b => map_a1 (f^~b) a
+  | A a, L _ _ _ => map_a1 (f a) b
+  | L ta na a, L tb nb b => L ta na (NE.zipWith (thread_a1 f) a b)
+  end.
+
+
+Fixpoint map_a (f:At->option At) (x:K): option K :=
+  match x with
+  | A n => option_map A (f n)
+  | L t n aa => option_map (L t n) (NE.seqOpt (NE.map (map_a f) aa))
+  end.
+
+Fixpoint thread_a (f:At->At->option At) (a b: K) {struct a}: option K :=
+  match a, b with
+  | A a, A b     => option_map A (f a b)
   | L _ _ _, A b => map_a (f^~b) a
   | A a, L _ _ _ => map_a (f a) b
-  | L ta na a, L tb nb b => L ta na (NE.zipWith (thread f) a b)
+  | L ta na a, L tb nb b =>
+    option_map (L ta na) (NE.seqOpt (NE.zipWith (thread_a f) a b))
   end.
+
+Definition addi (a b:At): option At :=
+  match a,b with ANu a,ANu b => Some(ANu(addnu a b)) end.
 
 
 
@@ -221,7 +258,7 @@ Notation "::" := (krconst)(at level 10).
 
 
 Definition izero := I32.eq I32.zero.
-Definition ipos := I32.lt I32.zero. Definition ineg := I32.lt^~I32.zero.
+Definition ipos := I32.lt I32.zero.  Definition ineg := I32.lt^~I32.zero.
 
 Definition isI a := if a is A(ANu(I _)) then true else false.
 Definition isIpos a := if a is A(ANu(I n)) then ipos n else false.
