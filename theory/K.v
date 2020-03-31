@@ -146,6 +146,7 @@ Definition K0i:K := I 0.  Definition K1i:K := I 1.
 Definition K00i := L Ti 0 (NE.mk K0i  [::]).
 Definition K31i := L Ti 3 (NE.mk K1i  [::K1i;K1i]).
 Definition K331i:= L TL 3 (NE.mk K31i [::K31i;K31i]).
+Definition K0C:K:= L Tc 0 (NE.sing (A(AC Space))).
 
 Section ops.
 
@@ -210,7 +211,7 @@ Fixpoint nullify a := match a with
 end.
 
 
-(* Definition unil:K := L TL 0 _ [::]. *)
+Definition unil:K := L TL 0 (NE.sing K0C).
 
 Definition khead (k:K):K := match k with
 | A _=> k | L t 0 a=> nullify (NE.head a) | L t n a=> NE.head a
