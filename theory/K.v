@@ -20,14 +20,11 @@ Notation "f =<< a" := (bind f a)(at level 40).
 Notation "f <$> a" := (map f a)(at level 40).
 End opt.
 
-
 Module seqx.
 Definition zipWith A B C (f: A->B->C) :=
   fix zipWith (s: seq A) (t: seq B) {struct s}: seq C :=
-    match s, t with
-    | [::],_ | _,[::] => [::]
-    | x::s, y::t => f x y :: zipWith s t
-    end.
+    match s, t with | [::],_ | _,[::] => [::]
+                    | x::s, y::t => f x y :: zipWith s t end.
 
 Definition seqOpt X (a:seq(option X)) : option(seq X) :=
   foldr (opt.lift2 cons) (Some[::]) a.
@@ -39,23 +36,18 @@ Variables A B C : Type.
 Inductive ne A := mk of A & seq A.
 
 Definition sing (a:A) := mk a [::].
-
 Definition map (f:A->B) (s:ne A):=
   let 'mk a aa:=s in mk (f a) (seq.map f aa).
-
 Definition rev (s:ne A): ne A :=
   let 'mk a bb:=s in let r:=rcons(rev bb)a in mk(last a bb)(behead r).
-
 Definition head '(mk a _) := a:A.
 Definition tolist '(mk a aa) := a::aa : seq A.
 Definition foldl (f:A->A->A) '(mk a aa) : A := foldl f a aa.
-
 Definition seqOpt X (a:ne(option X)) : option(ne X) :=
   match a with NE.mk None _ => None
              | NE.mk (Some a) aa => if seqx.seqOpt aa is Some r
                                     then Some(NE.mk a r) else None
   end.
-
 Definition zipWith (f:A->B->C) (a:ne A) (b:ne B): ne C :=
   let '(mk a aa, mk b bb) := (a,b) in mk (f a b) (seqx.zipWith f aa bb).
 
@@ -74,10 +66,8 @@ rewrite -(revK aa); set r:=seq.rev aa; rewrite revK.
 case: r=> //= r rr. by rewrite rev_cons last_rcons rev_rcons rcons_cons.
 Qed.
 
-Lemma revK (a:ne A): rev(rev a) = a.
-Proof.
-case: a=> //a l. by rewrite /rev wtf_last wtf_behead.
-Qed.
+Lemma revK : involutive rev.
+Proof. case=> //a l. by rewrite /rev wtf_last wtf_behead. Qed.
 End NE. End NE.
 Notation seq1:=NE.ne.
 
@@ -89,8 +79,8 @@ Notation "[i64 i ]" := (I64.mkint i _)(format "[i64  i ]").
 
 
 Inductive Nu := I of i32 | J of i64.
-Inductive At := ANu of Nu.
-Inductive Ty := Ti|Tj|TL.
+Inductive At := ANu of Nu | AC of ascii.
+Inductive Ty := Ti|Tj|TL|Tc.
 Inductive K :=
 | A of At
 | L of Ty & nat & seq1 K.
@@ -99,7 +89,6 @@ Inductive K :=
 Definition nu2k    n := A(ANu n).             Coercion nu2k: Nu >-> K.
 Definition nat2i32 n := I32.repr(Z.of_nat n). Coercion nat2i32: nat >-> i32.
 Definition nat2i64 n := I64.repr(Z.of_nat n). Coercion nat2i64: nat >-> i64.
-
 
 
 
@@ -112,14 +101,12 @@ Definition Kiofnat (n:nat):K := I n.   Definition Kjofnat (n:nat):K := J n.
 Definition iwiden (a:i32):i64 := I64.repr(I32.signed a).
 
 Definition addnu (a b:Nu) := match a,b with
-  | I i, I j => I(I32.add i j)
-  | J i, J j => J(I64.add i j)
+  | I i, I j => I(I32.add i j) | J i, J j => J(I64.add i j)
   | I i, J j => J(I64.add (iwiden i)j)
   | J i, I j => J(I64.add i(iwiden j)) end.
 
 Definition eqnu (a b:Nu) := match a,b with
-  | I i, I j => I32.eq i j
-  | J i, J j => I64.eq i j
+  | I i, I j => I32.eq i j | J i, J j => I64.eq i j
   | I i, J j => I64.eq (iwiden i)j
   | J i, I j => I64.eq i(iwiden j)
 end.
@@ -160,7 +147,6 @@ Definition K00i := L Ti 0 (NE.mk K0i  [::]).
 Definition K31i := L Ti 3 (NE.mk K1i  [::K1i;K1i]).
 Definition K331i:= L TL 3 (NE.mk K31i [::K31i;K31i]).
 
-
 Section ops.
 
 Fixpoint map_a (f:At->option At) a: option K :=
@@ -185,11 +171,11 @@ Definition thread_a' (f:At->At->At) (a b: K) :=
   thread_a (fun a b=> Some(f a b)) a b.
 
 Definition add_a (a b:At): option At :=
-  match a,b with ANu a,ANu b => Some(ANu(addnu a b)) end.
+  if (a,b) is (ANu a,ANu b) then Some(ANu(addnu a b)) else None.
 
 Lemma add_aC (a b:At) : commutative add_a.
-Proof. case; case=>i; case; case=>y /=;
-  by rewrite (I32.add_commut,I64.add_commut).
+Proof.
+case=>[i|c]; case=>[j|d] => //. by rewrite/add_a addnuC.
 Qed.
 
 
@@ -204,7 +190,7 @@ Admitted.
 
 
 Definition ktype (a:K):Ty := match a with
-| A(ANu(I _))=>Ti | A(ANu(J _))=>Tj | L _ _ _=> TL
+| A(ANu(I _))=>Ti | A(ANu(J _))=>Tj | A(AC _)=>Tc | L _ _ _=> TL
 end.
 
 
@@ -219,6 +205,7 @@ Notation "#:? a" := (opt.map ksize a)(at level 60).
 Fixpoint nullify a := match a with
 | A(ANu(I _))=> K0i
 | A(ANu(J _))=> K0j
+| A(AC _)=>     A(AC Space)
 | L t n aa   => L t n (NE.map nullify aa)
 end.
 
