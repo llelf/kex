@@ -8,12 +8,16 @@ Set Implicit Arguments.            Unset Strict Implicit.
 Unset Printing Implicit Defensive. Set Bullet Behavior "None".
 
 Module opt.
-Fixpoint lift X Y Z (f:X->Y->Z) a b : option Z :=
+Fixpoint lift2 X Y Z (f:X->Y->Z) a b : option Z :=
   match a,b with | Some a,Some b => Some(f a b)
                  | _,_ => None
   end.
-
+Definition join  X   (a:option(option X)) := if a is Some a then a else None.
+Definition bind  X Y (f:X->option Y) a := if a is Some a then f a else None.
+Definition bind2 X Y (f:X->Y->option Z) a b : option Z := join(lift2 f a b).
 Definition map := option_map.
+Notation "f =<< a" := (bind f a)(at level 40).
+Notation "f <$> a" := (map f a)(at level 40).
 End opt.
 
 
@@ -26,7 +30,7 @@ Definition zipWith A B C (f: A->B->C) :=
     end.
 
 Definition seqOpt X (a:seq(option X)) : option(seq X) :=
-  foldr (opt.lift cons) (Some[::]) a.
+  foldr (opt.lift2 cons) (Some[::]) a.
 End seqx.
 
 
@@ -43,8 +47,8 @@ Definition rev (s:ne A): ne A :=
   let 'mk a bb:=s in let r:=rcons(rev bb)a in mk(last a bb)(behead r).
 
 Definition head '(mk a _) := a:A.
-
 Definition tolist '(mk a aa) := a::aa : seq A.
+Definition foldl (f:A->A->A) '(mk a aa) : A := foldl f a aa.
 
 Definition seqOpt X (a:ne(option X)) : option(ne X) :=
   match a with NE.mk None _ => None
@@ -80,8 +84,8 @@ Notation seq1:=NE.ne.
 
 Module   I32:=Int.     Module   I64:=Int64.
 Notation i32:=I32.int. Notation i64:=I64.int.
-Notation "[i32 i m ]" := (I32.mkint i m)(format "[i32  i  m ]").
-Notation "[i64 i m ]" := (I64.mkint i m)(format "[i64  i  m ]").
+Notation "[i32 i ]" := (I32.mkint i _)(format "[i32  i ]").
+Notation "[i64 i ]" := (I64.mkint i _)(format "[i64  i ]").
 
 
 Inductive Nu := I of i32 | J of i64.
@@ -158,8 +162,6 @@ Definition K331i:= L TL 3 (NE.mk K31i [::K31i;K31i]).
 
 
 
-
-
 Section ops.
 
 
@@ -180,24 +182,38 @@ Fixpoint thread_a1 (f:At->At->At) (a b: K) {struct a}: K :=
 
 Fixpoint map_a (f:At->option At) (x:K): option K :=
   match x with
-  | A n => option_map A (f n)
-  | L t n aa => option_map (L t n) (NE.seqOpt (NE.map (map_a f) aa))
+  | A n => opt.map A (f n)
+  | L t n aa => opt.map (L t n) (NE.seqOpt (NE.map (map_a f) aa))
   end.
 
 Fixpoint thread_a (f:At->At->option At) (a b: K) {struct a}: option K :=
   match a, b with
-  | A a, A b     => option_map A (f a b)
+  | A a, A b     => opt.map A (f a b)
   | L _ _ _, A b => map_a (f^~b) a
   | A a, L _ _ _ => map_a (f a) b
   | L ta na a, L tb nb b =>
     if na==nb then
-      option_map (L ta na) (NE.seqOpt (NE.zipWith (thread_a f) a b))
+      opt.map (L ta na) (NE.seqOpt (NE.zipWith (thread_a f) a b))
     else None
   end.
 
-Definition addi (a b:At): option At :=
+Definition add_a (a b:At): option At :=
   match a,b with ANu a,ANu b => Some(ANu(addnu a b)) end.
 
+Lemma add_aC (a b:At) : commutative add_a.
+Proof. case; case=>i; case; case=>y /=;
+  by rewrite (I32.add_commut,I64.add_commut).
+Qed.
+
+
+Definition kadd (a b:K):option K := thread_a add_a a b.
+Infix "+^" := kadd(at level 50).
+
+Check erefl: I 2 +^ I 2 = Some(A(ANu(I 4))).
+
+
+Lemma kaddC : commutative kadd.
+Admitted.
 
 
 Definition ktype (a:K):Ty := match a with
@@ -209,9 +225,8 @@ Definition ksize (a:K):K := match a with
 | A a => K1i | L _ n _ => I n
 end.
 
-Notation "#:" := (ksize)(at level 10).
-
-
+Notation "#: a"  := (ksize a)        (at level 60).
+Notation "#:? a" := (opt.map ksize a)(at level 60).
 
 
 Fixpoint nullify a := match a with
@@ -227,24 +242,23 @@ Definition khead (k:K):K := match k with
 | A _=> k | L t 0 a=> nullify (NE.head a) | L t n a=> NE.head a
 end.
 
-Notation "*:" := (khead)(at level 10).
+Notation "*:  a" := (khead a)        (at level 60).
+Notation "*:? a" := (opt.map khead a)(at level 60).
 
 Definition krev (k:K):K := match k with
 | A _=> k | L t 0 a=> k | L t n aa=> L t n (NE.rev aa)
 end.
 
-Notation "|:" := (krev)(at level 10).
+Notation "|:  a" := (krev a)        (at level 60).
+Notation "|:? a" := (opt.map krev a)(at level 60).
 
 
-
-
-
-Lemma krevK : involutive (|:).
+Lemma krevK : involutive krev.
 Proof.
 case=> t // n aa. case: n=> //= n. by rewrite NE.revK.
 Qed.
 
-Lemma size_krev a : #:(|:a) = #:a.
+Lemma size_krev a : (#:|:a) = #:a.
 Proof. case: a=> // t n aa. case: n=> //. Qed.
 
 
@@ -252,13 +266,13 @@ Definition enlist (a:K):K := L TL 1 (NE.sing a).
 
 Notation ",:" := (enlist)(at level 10).
 
-Lemma size_enlist a : #:(,:a) = K1i.  Proof. by[]. Qed.
+(* Lemma size_enlist a : #:(,:a) = K1i.  Proof. by[]. Qed. *)
 
 
 
 Definition krconst (a b:K):K := b.
-Notation "::" := (krconst)(at level 10).
-
+Notation ":: a"  := (krconst a)(at level 60).
+Notation "::? a" := (opt.map krconst a)(at level 60).
 
 Definition izero := I32.eq 0.
 Definition ipos  := I32.lt 0.  Definition ineg := I32.lt^~0.
@@ -277,9 +291,10 @@ Definition kiota (a:K):option K := match a with
   | _=> None
 end.
 
+Notation "!: a"  := (kiota a)(at level 60).
+Notation "!:? a" := (opt.bind kiota a)(at level 60).
 
-Notation "!:" := (kiota)(at level 10).
-
+Compute !:? K0i +^ K1i.
 
 
 
@@ -290,7 +305,7 @@ Admitted.
 
 
 
-Lemma size_kiota a : isIpos a -> option_map (#:)(!:a) = Some a.
+Lemma size_kiota a : isIpos a -> (#:?!:a) = Some a.
 Proof.
 case: a=> //= a. case: a => // n. case: n=> //i POS.
 case: (i_dec i). case.
