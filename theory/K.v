@@ -161,32 +161,15 @@ Definition K31i := L Ti 3 (NE.mk K1i  [::K1i;K1i]).
 Definition K331i:= L TL 3 (NE.mk K31i [::K31i;K31i]).
 
 
-
 Section ops.
 
-
-Fixpoint map_a1 (f:At->At) (x:K): K :=
-  match x with
-  | A n => A (f n)
-  | L t n aa => L t n (NE.map (map_a1 f) aa)
-  end.
-
-Fixpoint thread_a1 (f:At->At->At) (a b: K) {struct a}: K :=
-  match a, b with
-  | A a, A b     => A (f a b)
-  | L _ _ _, A b => map_a1 (f^~b) a
-  | A a, L _ _ _ => map_a1 (f a) b
-  | L ta na a, L tb nb b => L ta na (NE.zipWith (thread_a1 f) a b)
-  end.
-
-
-Fixpoint map_a (f:At->option At) (x:K): option K :=
-  match x with
+Fixpoint map_a (f:At->option At) a: option K :=
+  match a with
   | A n => opt.map A (f n)
   | L t n aa => opt.map (L t n) (NE.seqOpt (NE.map (map_a f) aa))
   end.
 
-Fixpoint thread_a (f:At->At->option At) (a b: K) {struct a}: option K :=
+Fixpoint thread_a (f:At->At->option At) a b {struct a}: option K :=
   match a, b with
   | A a, A b     => opt.map A (f a b)
   | L _ _ _, A b => map_a (f^~b) a
@@ -196,6 +179,10 @@ Fixpoint thread_a (f:At->At->option At) (a b: K) {struct a}: option K :=
       opt.map (L ta na) (NE.seqOpt (NE.zipWith (thread_a f) a b))
     else None
   end.
+
+Definition map_a' (f:At->At) (x:K) := map_a (fun a=> Some(f a)) x.
+Definition thread_a' (f:At->At->At) (a b: K) :=
+  thread_a (fun a b=> Some(f a b)) a b.
 
 Definition add_a (a b:At): option At :=
   match a,b with ANu a,ANu b => Some(ANu(addnu a b)) end.
