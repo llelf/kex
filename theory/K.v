@@ -8,13 +8,13 @@ Set Implicit Arguments.            Unset Strict Implicit.
 Unset Printing Implicit Defensive. Set Bullet Behavior "None".
 
 Module opt.
-Fixpoint lift2 X Y Z (f:X->Y->Z) a b : option Z :=
+Fixpoint lift2 A B C (f:A->B->C) a b : option C :=
   match a,b with | Some a,Some b => Some(f a b)
                  | _,_ => None
   end.
-Definition join  X   (a:option(option X)) := if a is Some a then a else None.
-Definition bind  X Y (f:X->option Y) a := if a is Some a then f a else None.
-Definition bind2 X Y (f:X->Y->option Z) a b : option Z := join(lift2 f a b).
+Definition join    A  (a:option(option A)) := if a is Some a then a else None.
+Definition bind   A B  (f:A->option B) a := if a is Some a then f a else None.
+Definition bind2 A B C  (f:A->B->option C) a b: option C := join(lift2 f a b).
 Definition map := option_map.
 Notation "f =<< a" := (bind f a)(at level 40).
 Notation "f <$> a" := (map f a)(at level 40).
@@ -199,7 +199,7 @@ Infix "+^" := kadd(at level 50).
 Check erefl: I 2 +^ I 2 = Some(A(ANu(I 4))).
 
 
-Lemma kaddC : commutative kadd.
+Lemma kaddA : associative (opt.bind2 kadd).
 Admitted.
 
 
