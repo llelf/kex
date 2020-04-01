@@ -235,7 +235,7 @@ Definition enlist (a:K):K := L TL 1 (NE.sing a).
 
 Notation ",:" := (enlist)(at level 10).
 
-(* Lemma size_enlist a : #:(,:a) = K1i.  Proof. by[]. Qed. *)
+Lemma size_enlist a : #:,:a = K1i.  Proof. by[]. Qed.
 
 
 
