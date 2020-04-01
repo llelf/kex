@@ -110,23 +110,24 @@ Definition eqnu (a b:Nu) := match a,b with
   | I i, J j => I64.eq (iwiden i)j
   | J i, I j => I64.eq i(iwiden j)
 end.
+Infix "=nu" := eqnu(at level 50).
 
 Lemma wide_range a: (I64.min_signed <= I32.signed a <= I64.max_signed)%Z.
 Admitted.
 
 
-Lemma addnuC a b : addnu a b = addnu b a.
+Lemma addnuC : commutative addnu.
 Proof.
-by elim a=>i; elim b=>j => /=; rewrite (I32.add_commut,I64.add_commut).
+by elim=>i; elim=>j => /=; rewrite (I32.add_commut,I64.add_commut).
 Qed.
 
-Lemma addnu0i a : addnu a (I 0) = a.
+Lemma addnu0i : right_id (I 0) addnu.
 Proof.
-elim a=>i /=. by rewrite I32.add_zero.
+elim=>i /=. by rewrite I32.add_zero.
 by rewrite/iwiden I32.signed_zero I64.add_zero.
 Qed.
 
-Lemma addnu0j a : eqnu (addnu a (J 0)) a.
+Lemma addnu0j a : addnu a (J 0) =nu a.
 Proof.
 elim a=>i /=.
 - by rewrite/iwiden I64.add_zero I64.eq_true.
@@ -161,7 +162,7 @@ Fixpoint thread_a (f:At->At->option At) a b {struct a}: option K :=
     else None
   end.
 
-Definition map_a' (f:At->At) (x:K) := map_a (fun a=> Some(f a)) x.
+Definition map_a' (f:At->At) (x:K) := map_a (Some \o f) x.
 Definition thread_a' (f:At->At->At) (a b: K) :=
   thread_a (fun a b=> Some(f a b)) a b.
 
