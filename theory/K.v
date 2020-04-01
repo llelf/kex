@@ -117,13 +117,7 @@ Admitted.
 
 Lemma addnuC a b : addnu a b = addnu b a.
 Proof.
-elim a=>i; elim b=>j => /=.
-- by rewrite I32.add_commut.
-- rewrite/iwiden !I64.add_signed I64.signed_repr;
-    [rewrite Z.add_comm//| exact: wide_range].
-- rewrite/iwiden !I64.add_signed I64.signed_repr;
-    [rewrite Z.add_comm//| exact: wide_range].
-by rewrite I64.add_commut.
+by elim a=>i; elim b=>j => /=; rewrite (I32.add_commut,I64.add_commut).
 Qed.
 
 Lemma addnu0i a : addnu a (I 0) = a.
