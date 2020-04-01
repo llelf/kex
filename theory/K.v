@@ -68,6 +68,11 @@ Qed.
 
 Lemma revK : involutive rev.
 Proof. case=> //a l. by rewrite /rev wtf_last wtf_behead. Qed.
+
+Lemma eq_map f g : f =1 g -> map f =1 map g.
+Proof.
+move=>F. case=>a l. elim:l=> [|x l I] /=; rewrite !F//. by rewrite (eq_map F).
+Qed.
 End NE. End NE.
 Notation seq1:=NE.ne.
 
