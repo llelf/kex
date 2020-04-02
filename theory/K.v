@@ -15,9 +15,8 @@ Fixpoint lift2 A B C (f:A->B->C) a b : option C :=
 Definition join    A  (a:option(option A)) := if a is Some a then a else None.
 Definition bind   A B  (f:A->option B) a := if a is Some a then f a else None.
 Definition bind2 A B C  (f:A->B->option C) a b: option C := join(lift2 f a b).
-Definition map := option_map.
-Notation "f =<< a" := (bind f a)(at level 40).
-Notation "f <$> a" := (map f a)(at level 40).
+Notation "f =<< a" := (obind f a)(at level 40).
+Notation "f <$> a" := (omap f a) (at level 40).
 End opt.
 
 Module seqx.
@@ -152,18 +151,18 @@ Section ops.
 
 Fixpoint map_a (f:At->option At) a: option K :=
   match a with
-  | A n => opt.map A (f n)
-  | L t n aa => opt.map (L t n) (NE.seqOpt (NE.map (map_a f) aa))
+  | A n => omap A (f n)
+  | L t n aa => omap (L t n) (NE.seqOpt (NE.map (map_a f) aa))
   end.
 
 Fixpoint thread_a (f:At->At->option At) a b {struct a}: option K :=
   match a, b with
-  | A a, A b     => opt.map A (f a b)
+  | A a, A b     => omap A (f a b)
   | L _ _ _, A b => map_a (f^~b) a
   | A a, L _ _ _ => map_a (f a) b
   | L ta na a, L tb nb b =>
     if na==nb then
-      opt.map (L ta na) (NE.seqOpt (NE.zipWith (thread_a f) a b))
+      omap (L ta na) (NE.seqOpt (NE.zipWith (thread_a f) a b))
     else None
   end.
 
@@ -199,8 +198,8 @@ Definition ksize (a:K):K := match a with
 | A a => K1i | L _ n _ => I n
 end.
 
-Notation "#: a"  := (ksize a)        (at level 60).
-Notation "#:? a" := (opt.map ksize a)(at level 60).
+Notation "#: a"  := (ksize a)     (at level 60).
+Notation "#:? a" := (omap ksize a)(at level 60).
 
 
 Fixpoint nullify a := match a with
@@ -217,15 +216,15 @@ Definition khead (k:K):K := match k with
 | A _=> k | L t 0 a=> nullify (NE.head a) | L t n a=> NE.head a
 end.
 
-Notation "*:  a" := (khead a)        (at level 60).
-Notation "*:? a" := (opt.map khead a)(at level 60).
+Notation "*:  a" := (khead a)     (at level 60).
+Notation "*:? a" := (omap khead a)(at level 60).
 
 Definition krev (k:K):K := match k with
 | A _=> k | L t 0 a=> k | L t n aa=> L t n (NE.rev aa)
 end.
 
-Notation "|:  a" := (krev a)        (at level 60).
-Notation "|:? a" := (opt.map krev a)(at level 60).
+Notation "|:  a" := (krev a)     (at level 60).
+Notation "|:? a" := (omap krev a)(at level 60).
 
 
 Lemma krevK : involutive krev.
@@ -246,8 +245,8 @@ Lemma size_enlist a : #:,:a = K1i.  Proof. by[]. Qed.
 
 
 Definition krconst (a b:K):K := b.
-Notation ":: a"  := (krconst a)(at level 60).
-Notation "::? a" := (opt.map krconst a)(at level 60).
+Notation ":: a"  := (krconst a)     (at level 60).
+Notation "::? a" := (omap krconst a)(at level 60).
 
 Definition izero := I32.eq 0.
 Definition ipos  := I32.lt 0.  Definition ineg := I32.lt^~0.
@@ -266,8 +265,8 @@ Definition kiota (a:K):option K := match a with
   | _=> None
 end.
 
-Notation "!: a"  := (kiota a)(at level 60).
-Notation "!:? a" := (opt.bind kiota a)(at level 60).
+Notation "!: a"  := (kiota a)      (at level 60).
+Notation "!:? a" := (obind kiota a)(at level 60).
 
 Compute !:? K0i +^ K1i.
 
