@@ -42,6 +42,7 @@ Definition rev (s:ne A): ne A :=
 Definition head '(mk a _) := a:A.
 Definition tolist '(mk a aa) := a::aa : seq A.
 Definition foldl (f:A->A->A) '(mk a aa) : A := foldl f a aa.
+Definition foldr (f:A->A->A) '(mk a aa) : A := foldr f a aa.
 Definition seqOpt X (a:ne(option X)) : option(ne X) :=
   match a with NE.mk None _ => None
              | NE.mk (Some a) aa => if seqx.seqOpt aa is Some r
@@ -82,18 +83,34 @@ Notation "[i32 i ]" := (I32.mkint i _)(format "[i32  i ]").
 Notation "[i64 i ]" := (I64.mkint i _)(format "[i64  i ]").
 
 
+Section core.
+
 Inductive Nu := I of i32 | J of i64.
 Inductive At := ANu of Nu | AC of ascii.
 Inductive Ty := Ti|Tj|TL|Tc.
-Inductive K :=
-| A of At
-| L of Ty & nat & seq1 K.
+
+Unset Elimination Schemes.
+Inductive K := A of At | L of Ty & nat & seq1 K.
+
+Definition K_ind
+   (P:K->Prop)
+   (IA: forall a:At, P(A a))
+   (IL: forall (t:Ty)(n:nat)(a:K)(s:seq K),
+       foldr (fun x:K => and(P x)) True s -> P (L t n (NE.mk a s))) :=
+ fix loop a: P a: Prop := match a with
+ | A a => IA a
+ | L t n (NE.mk a0 s0) =>
+    let fix all s : foldr (fun x => and (P x)) True s :=
+      if s is e::s then conj (loop e) (all s) else Logic.I
+    in IL t n a0 s0 (all s0)
+ end.                                               Set Elimination Schemes.
 
 
 Definition nu2k    n := A(ANu n).             Coercion nu2k: Nu >-> K.
 Definition nat2i32 n := I32.repr(Z.of_nat n). Coercion nat2i32: nat >-> i32.
 Definition nat2i64 n := I64.repr(Z.of_nat n). Coercion nat2i64: nat >-> i64.
 
+End core.
 
 
 Section arith.
