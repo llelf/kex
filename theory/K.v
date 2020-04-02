@@ -93,16 +93,16 @@ Unset Elimination Schemes.
 Inductive K := A of At | L of Ty & nat & seq1 K.
 
 Definition K_ind
-   (P:K->Prop)
+   (P:  K->Prop)
    (IA: forall a:At, P(A a))
    (IL: forall (t:Ty)(n:nat)(a:K)(s:seq K),
-       foldr (fun x:K => and(P x)) True s -> P (L t n (NE.mk a s))) :=
+       foldr (fun x:K => and(P x)) True (a::s) -> P (L t n (NE.mk a s))) :=
  fix loop a: P a: Prop := match a with
  | A a => IA a
  | L t n (NE.mk a0 s0) =>
     let fix all s : foldr (fun x => and (P x)) True s :=
       if s is e::s then conj (loop e) (all s) else Logic.I
-    in IL t n a0 s0 (all s0)
+    in IL t n a0 s0 (all (a0::s0))
  end.                                               Set Elimination Schemes.
 
 
