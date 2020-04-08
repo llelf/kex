@@ -113,6 +113,11 @@ Definition nat2i64 n := I64.repr(Z.of_nat n). Coercion nat2i64: nat >-> i64.
 End core.
 
 
+Section kmonad.
+Inductive oops:= EType|EClass|EDom|ELen.
+Inductive res:=   Err of oops|OK of K.
+End kmonad.
+
 Section arith.
 Definition ONi := I(I32.repr I32.min_signed).
 Definition ONj := J(I64.repr I64.min_signed).
