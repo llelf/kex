@@ -212,6 +212,13 @@ Qed.
 Canonical At_eqMixin := EqMixin eqatP.
 Canonical At_eqType  := Eval hnf in EqType At At_eqMixin.
 
+Definition aeqat a b: bool := match a,b with
+  | ANu a,ANu b=> aeqnu a b | AC a,AC b=> Ascii.eqb a b | _,_=> false
+end.
+
+Remark aeqatC : symmetric aeqat.
+Proof. case=>[x|a]; case=>[y|b]//=. exact:aeqnuC. exact:Ascii.eqb_sym. Qed.
+
 End eq.
 
 
