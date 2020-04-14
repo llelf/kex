@@ -229,6 +229,13 @@ end.
 Remark aeqatC : symmetric aeqat.
 Proof. case=>[x|a]; case=>[y|b]//=. exact:aeqnuC. exact:Ascii.eqb_sym. Qed.
 
+Definition eqty a b :=
+  match a,b with Ti,Ti|Tj,Tj|TL,TL|Tc,Tc=>true|_,_=>false end.
+Lemma eqtyP : Equality.axiom eqty.
+Proof. move=>a b. apply:(iffP idP)=>[|->]. by case:a;case:b. by case:b. Qed.
+Canonical Ty_eqMixin := EqMixin eqtyP.
+Canonical Ty_eqType  := Eval hnf in EqType Ty Ty_eqMixin.
+
 End eq.
 
 Section qc_wish.
