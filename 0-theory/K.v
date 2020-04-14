@@ -198,6 +198,23 @@ Definition K31i := L Ti 3 (NE.mk K1i  [::K1i;K1i]).
 Definition K331i:= L TL 3 (NE.mk K31i [::K31i;K31i]).
 Definition K0C:K:= L Tc 0 (NE.sing (A(AC Space))).
 
+Section eq.
+
+Definition eqat a b: bool := match a,b with
+  | ANu a,ANu b=> a==b | AC a,AC b=> Ascii.eqb a b | _,_=> false
+end.
+
+Lemma eqatP : Equality.axiom eqat.
+Proof.
+move=>a b. apply:(iffP idP)=>[|->]. case:a=>[n|a]; case:b=>[m|b]//=.
+by move/eqP->. by move/Ascii.eqb_spec->. case:b=>//=b. exact:Ascii.eqb_refl.
+Qed.
+Canonical At_eqMixin := EqMixin eqatP.
+Canonical At_eqType  := Eval hnf in EqType At At_eqMixin.
+
+End eq.
+
+
 Section ops.
 
 Fixpoint map_a (f:At->option At) a: option K :=
