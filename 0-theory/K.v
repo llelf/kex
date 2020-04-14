@@ -155,6 +155,11 @@ Proof.
 move=>??. apply:(iffP idP)=>[|->]. by move/I64.same_if_eq->. exact:I64.eq_true.
 Qed.
 
+Canonical i32_eqMixin := EqMixin i32P.
+Canonical i32_eqType  := Eval hnf in EqType i32 i32_eqMixin.
+Canonical i64_eqMixin := EqMixin i64P.
+Canonical i64_eqType  := Eval hnf in EqType i64 i64_eqMixin.
+
 Lemma eqnuP : Equality.axiom eqnu.
 Proof.
 move=>a b. apply:(iffP idP)=>[|->].
