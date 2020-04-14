@@ -179,6 +179,9 @@ Qed.
 Canonical Nu_eqMixin := EqMixin eqnuP.
 Canonical Nu_eqType  := Eval hnf in EqType Nu Nu_eqMixin.
 
+Lemma eqnuE : eqnu=eq_op.     Proof. by[]. Qed.
+Lemma eqnuC : symmetric eqnu. Proof. by move=>*/[rw eqnuE]. Qed.
+
 Lemma wide_range a: (I64.min_signed <= I32.signed a <= I64.max_signed)%Z.
 Admitted.
 
@@ -223,6 +226,9 @@ by move/eqP->. by move/Ascii.eqb_spec->. case:b=>//=b. exact:Ascii.eqb_refl.
 Qed.
 Canonical At_eqMixin := EqMixin eqatP.
 Canonical At_eqType  := Eval hnf in EqType At At_eqMixin.
+
+Lemma eqatE : eqat=eq_op.     Proof. by[]. Qed.
+Lemma eqatC : symmetric eqat. Proof. by move=>*/[rw eqatE]. Qed.
 
 Definition aeqat a b: bool := match a,b with
   | ANu a,ANu b=> aeqnu a b | AC a,AC b=> Ascii.eqb a b | _,_=> false
