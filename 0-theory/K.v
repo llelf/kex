@@ -170,6 +170,9 @@ move=>a b. apply:(iffP idP)=>[|->].
 case:b=>j/=. exact/i32P. exact/i64P.
 Qed.
 
+Canonical Nu_eqMixin := EqMixin eqnuP.
+Canonical Nu_eqType  := Eval hnf in EqType Nu Nu_eqMixin.
+
 Lemma wide_range a: (I64.min_signed <= I32.signed a <= I64.max_signed)%Z.
 Admitted.
 
