@@ -236,6 +236,12 @@ Proof. move=>a b. apply:(iffP idP)=>[|->]. by case:a;case:b. by case:b. Qed.
 Canonical Ty_eqMixin := EqMixin eqtyP.
 Canonical Ty_eqType  := Eval hnf in EqType Ty Ty_eqMixin.
 
+Fixpoint eqk (a b:K): bool := match a,b with
+  | A a, A b=> a==b
+  | L t n s, L t' n' s'=> [&& t==t', n==n' & eqseq1 eqk s s']
+  | _,_=> false
+end.
+
 End eq.
 
 Section qc_wish.
