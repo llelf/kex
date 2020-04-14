@@ -141,6 +141,26 @@ Infix "=nu" := aeqnu(at level 50).
 Lemma aeqnuC : symmetric aeqnu.
 Proof. by case=>i; case=>j=> /=; rewrite (I32.eq_sym,I64.eq_sym). Qed.
 
+Definition eqnu (a b:Nu) := match a,b with
+  | I i,I j=>I32.eq i j | J i,J j=>I64.eq i j | _,_=>false
+end.
+
+Lemma i32P : Equality.axiom I32.eq.
+Proof.
+move=>??. apply:(iffP idP)=>[|->]. by move/I32.same_if_eq->. exact:I32.eq_true.
+Qed.
+
+Lemma i64P : Equality.axiom I64.eq.
+Proof.
+move=>??. apply:(iffP idP)=>[|->]. by move/I64.same_if_eq->. exact:I64.eq_true.
+Qed.
+
+Lemma eqnuP : Equality.axiom eqnu.
+Proof.
+move=>a b. apply:(iffP idP)=>[|->].
+- case:a=>i; case:b=>j//=. by move/i32P->. by move/i64P->.
+case:b=>j/=. exact/i32P. exact/i64P.
+Qed.
 
 Lemma wide_range a: (I64.min_signed <= I32.signed a <= I64.max_signed)%Z.
 Admitted.
