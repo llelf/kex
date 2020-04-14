@@ -377,6 +377,8 @@ Definition ipos  := I32.lt 0.  Definition ineg := I32.lt^~0.
 Definition isI a := if a is A(ANu(I _)) then true else false.
 Definition isIpos a := if a is A(ANu(I n)) then ipos n else false.
 
+Definition iiota (n:nat):seq nat := iota 0 n.
+
 Definition kiota (a:K):option K := match a with
   | A(ANu(I ni))=>
     if izero ni then
@@ -413,6 +415,10 @@ case: (i_dec i). case.
   ryreconstr (@Z.lt_le_incl, @I32.signed_zero) (@is_true, @I32.lt).
 scrush.
 Qed.
+
+
+Fixpoint iwhere' i s := if s is a::s then nseq a i::iwhere' i.+1 s else [::].
+Definition iwhere (s:seq nat) := flatten(iwhere' 0 s).
 
 
 (* Definition kfold (a f:K):K := match a with *)
