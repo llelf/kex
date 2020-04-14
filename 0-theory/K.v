@@ -131,12 +131,16 @@ Definition addnu (a b:Nu) := match a,b with
   | I i, J j => J(I64.add (iwiden i)j)
   | J i, I j => J(I64.add i(iwiden j)) end.
 
-Definition eqnu (a b:Nu) := match a,b with
+Definition aeqnu (a b:Nu) := match a,b with
   | I i, I j => I32.eq i j | J i, J j => I64.eq i j
   | I i, J j => I64.eq (iwiden i)j
   | J i, I j => I64.eq i(iwiden j)
 end.
-Infix "=nu" := eqnu(at level 50).
+Infix "=nu" := aeqnu(at level 50).
+
+Lemma aeqnuC : symmetric aeqnu.
+Proof. by case=>i; case=>j=> /=; rewrite (I32.eq_sym,I64.eq_sym). Qed.
+
 
 Lemma wide_range a: (I64.min_signed <= I32.signed a <= I64.max_signed)%Z.
 Admitted.
