@@ -21,12 +21,15 @@ End opt.
 
 Module seqx.
 Definition zipWith A B C (f: A->B->C) :=
-  fix zipWith (s: seq A) (t: seq B) {struct s}: seq C :=
+  fix zw (s: seq A) (t: seq B) {struct s}: seq C :=
     match s, t with | [::],_ | _,[::] => [::]
-                    | x::s, y::t => f x y :: zipWith s t end.
+                    | x::s, y::t => f x y :: zw s t end.
 
 Definition seqOpt X (a:seq(option X)) : option(seq X) :=
   foldr (opt.lift2 cons) (Some[::]) a.
+
+Remark zipWithC A B (f:A->A->B) : commutative f -> commutative (zipWith f).
+Proof. move=>C. elim=>[|a l I]; case=>//=b t. by rewrite C I. Qed.
 End seqx.
 
 
