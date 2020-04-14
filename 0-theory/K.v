@@ -11,6 +11,9 @@ From Coq        Require Import ZArith.
 Set Implicit Arguments.            Unset Strict Implicit.
 Unset Printing Implicit Defensive. Set Bullet Behavior "None".
 
+Notation "'[' 'rw' r1 ']'" :=
+  (ltac:(rewrite r1))(at level 0,r1 at level 0):ssripat_scope.
+
 Module opt.
 Fixpoint lift2 A B C (f:A->B->C) a b : option C :=
   match a,b with | Some a,Some b => Some(f a b)
@@ -154,12 +157,12 @@ end.
 
 Lemma i32P : Equality.axiom I32.eq.
 Proof.
-move=>*; apply:(iffP idP)=>[/I32.same_if_eq|]->//; exact:I32.eq_true.
+by move=>*; apply:(iffP idP)=>[/I32.same_if_eq|->/[rw I32.eq_true]].
 Qed.
 
 Lemma i64P : Equality.axiom I64.eq.
 Proof.
-move=>*; apply:(iffP idP)=>[/I64.same_if_eq|]->//; exact:I64.eq_true.
+by move=>*; apply:(iffP idP)=>[/I64.same_if_eq|->/[rw I64.eq_true]].
 Qed.
 
 Canonical i32_eqMixin := EqMixin i32P.   Canonical i64_eqMixin := EqMixin i64P.
