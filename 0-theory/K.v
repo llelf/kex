@@ -221,6 +221,29 @@ Proof. case=>[x|a]; case=>[y|b]//=. exact:aeqnuC. exact:Ascii.eqb_sym. Qed.
 
 End eq.
 
+Section qc_wish.
+Instance geni32 : GenSized i32 :=
+  {| arbitrarySized _ := returnGen (I32.repr 0) |}.
+Instance geni64 : GenSized i64 :=
+  {| arbitrarySized _ := returnGen (I64.repr 0) |}.
+Instance shri32 : Shrink i32 := {| shrink _ := nil |}.
+Instance shri64 : Shrink i64 := {| shrink _ := nil |}.
+
+Instance Showi32 : Show i32 := {| show '[i32 i] := show i |}.
+Instance Showi64 : Show i64 := {| show '[i64 i] := show i |}.
+Instance Showseq1 T : Show (seq1 T) := {| show s := "<seq>"%string |}.
+
+Derive (Arbitrary,Show) for ascii.
+Derive (Arbitrary,Show) for Ty.         Derive (Arbitrary,Show) for Nu.
+Derive (Arbitrary,Show) for At.         Derive Show for K.
+
+Import QcDefaultNotation.
+
+Global Instance gensK : GenSized K :=
+  {| arbitrarySized _ := freq [(1, returnGen K0i)] |}.
+Global Instance shrinkK : Shrink K := {| shrink _ := nil |}.
+End qc_wish.
+
 
 Section ops.
 
