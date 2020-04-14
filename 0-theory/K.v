@@ -1,3 +1,7 @@
+(******************************************************************************)
+(*  eq* eqType  aeq* K's =                                                    *)
+(*  +: monadic  +, dyadic  +? in k-monad                                      *)
+(******************************************************************************)
 From mathcomp   Require Import ssreflect ssrnat ssrbool ssrfun eqtype seq.
 From QuickChick Require Import QuickChick.
 From compcert   Require Import Integers IEEE754_extra.
