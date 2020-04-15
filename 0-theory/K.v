@@ -248,11 +248,35 @@ Proof. move=>a b. apply:(iffP idP)=>[|->]. by case:a;case:b. by case:b. Qed.
 Canonical Ty_eqMixin := EqMixin eqtyP.
 Canonical Ty_eqType  := Eval hnf in EqType Ty Ty_eqMixin.
 
-Fixpoint eqk (a b:K): bool := match a,b with
+Fixpoint eqk (a b:K) {struct a} := match a,b with
   | A a, A b=> a==b
-  | L t n s, L t' n' s'=> [&& t==t', n==n' & eqseq1 eqk s s']
+  | L t n s, L t' n' s'=> [&& t==t', n==n' & NE.all2 eqk s s']
   | _,_=> false
 end.
+
+Lemma eqkP : Equality.axiom eqk.
+Proof.
+move=> x y; apply: (iffP idP)=> [|->].
+- elim: x y=>[a [] //= ? /eqP -> //|t n a s Ixs [|t' n' []a' s'] //=].
+  move/and3P=>[]/eqP->/eqP->.
+
+  elim: s Ixs s'. simpl. case=>I _. case. move/andP=>[]/I->.  done.
+  move=>a0 s0. move/andP=>[]/I. done.
+  move=>a0 s0. simpl. move=>I. case. move=>J. case. move=>H F.
+  case. move/andP=>[]. done.
+
+move=> a1 l1. rewrite/NE.all2. simpl. rewrite/NE.all2/= in I.
+
+move/and3P. case. move=>Q V W.
+move:(conj Q W). move/andP/(I (conj J F)). scrush.
+
+elim:y=>//=t n a. elim. rewrite/NE.all2/=. case. move->=>_.
+apply/and3P. done.
+
+scrush.
+Qed.
+
+
 
 End eq.
 
