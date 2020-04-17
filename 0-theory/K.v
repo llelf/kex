@@ -268,6 +268,9 @@ elim: y=>//=t n a; elim. rewrite/NE.all2/=. case. move->=>_. exact/and3P.
 scrush.
 Qed.
 
+Canonical K_eqMixin := EqMixin eqkP.
+Canonical K_eqType  := Eval hnf in EqType K K_eqMixin.
+
 End eq.
 
 Section qc_wish.
