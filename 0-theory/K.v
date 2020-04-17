@@ -257,26 +257,16 @@ end.
 Lemma eqkP : Equality.axiom eqk.
 Proof.
 move=> x y; apply: (iffP idP)=> [|->].
-- elim: x y=>[a [] //= ? /eqP -> //|t n a s Ixs [|t' n' []a' s'] //=].
+- elim: x y=>[a[]//=?/eqP->//|t n a s Ixs [|t' n'[]a' s']//=].
   move/and3P=>[]/eqP->/eqP->.
-
-  elim: s Ixs s'. simpl. case=>I _. case. move/andP=>[]/I->.  done.
-  move=>a0 s0. move/andP=>[]/I. done.
-  move=>a0 s0. simpl. move=>I. case. move=>J. case. move=>H F.
-  case. move/andP=>[]. done.
-
-move=> a1 l1. rewrite/NE.all2. simpl. rewrite/NE.all2/= in I.
-
-move/and3P. case. move=>Q V W.
-move:(conj Q W). move/andP/(I (conj J F)). scrush.
-
-elim:y=>//=t n a. elim. rewrite/NE.all2/=. case. move->=>_.
-apply/and3P. done.
-
+  elim: s Ixs s'=> /=.
+  + case=>I _ []; first by move/andP=>[]/I->. move=>a0 s0. by move/andP=>[]/I.
+  rewrite/NE.all2/= =>a0 s0 I[] J[] H F[]; first by move/andP=>[].
+  move=>??. move/and3P=>[] Q + W. move:(conj Q W).
+  move/andP/(I (conj J F)). scrush.
+elim: y=>//=t n a; elim. rewrite/NE.all2/=. case. move->=>_. exact/and3P.
 scrush.
 Qed.
-
-
 
 End eq.
 
