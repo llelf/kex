@@ -31,9 +31,12 @@ Definition zipWith A B C (f: A->B->C) :=
   fix zw (s: seq A) (t: seq B) {struct s}: seq C :=
     match s, t with | [::],_ | _,[::] => [::]
                     | x::s, y::t => f x y :: zw s t end.
-
 Definition seqOpt X (a:seq(option X)) : option(seq X) :=
   foldr (opt.lift2 cons) (Some[::]) a.
+Definition all2 {A B} (r:A->B->bool) := fix all2 s t :=
+  match s, t with [::],[::]=>true | a::s,b::t=>r a b && all2 s t | _,_=>false
+  end.
+Definition travOpt A B (f:A->option B) s := seqOpt [seq f a|a<-s].
 
 Remark zipWithC A B (f:A->A->B) : commutative f -> commutative (zipWith f).
 Proof. move=>C. elim=>[|a l I]; case=>//=b t. by rewrite C I. Qed.
@@ -60,7 +63,8 @@ Definition seqOpt X (a:ne(option X)) : option(ne X) :=
   end.
 Definition zipWith (f:A->B->C) (a:ne A) (b:ne B): ne C :=
   let '(mk a aa, mk b bb) := (a,b) in mk (f a b) (seqx.zipWith f aa bb).
-
+Definition all2 (e:A->B->bool) (a:ne A) (b:ne B) :=
+  let '(mk a aa, mk b bb) := (a,b) in e a b && seqx.all2 e aa bb.
 
 Remark wtf_last (a:A)(aa:seq A) :
   last(last a aa)(behead(rcons(seq.rev aa)a)) = a.
