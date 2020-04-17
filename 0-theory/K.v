@@ -262,8 +262,7 @@ move=> x y; apply: (iffP idP)=> [|->].
   elim: s Ixs s'=> /=.
   + case=>I _ []; first by move/andP=>[]/I->. move=>a0 s0. by move/andP=>[]/I.
   rewrite/NE.all2/= =>a0 s0 I[] J[] H F[]; first by move/andP=>[].
-  move=>??. move/and3P=>[] Q + W. move:(conj Q W).
-  move/andP/(I (conj J F)). scrush.
+  move=>??. move/and3P=>[Q+]/(conj Q)/andP/(I _). scrush.
 elim: y=>//=t n a; elim. rewrite/NE.all2/=. case. move->=>_. exact/and3P.
 scrush.
 Qed.
