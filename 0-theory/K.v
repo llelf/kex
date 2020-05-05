@@ -447,6 +447,12 @@ Fixpoint iwhere' i s := if s is a::s then nseq a i::iwhere' i.+1 s else [::].
 Definition iwhere (s:seq nat) := flatten(iwhere' 0 s).
 
 
+Lemma iwhere_x a : iwhere [::a] = nseq a 0.
+Proof.
+by rewrite/iwhere/iwhere'/= cats0.
+Qed.
+
+
 (* Definition kfold (a f:K):K := match a with *)
 (*   | A a=> a | L _ _ a aa=> foldl  *)
 
