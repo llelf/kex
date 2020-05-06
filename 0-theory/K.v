@@ -456,6 +456,15 @@ Proof.
 by rewrite/iwhere/iwhere'/= cats0.
 Qed.
 
+Lemma iwhere_cons a s : iwhere(a::s) = nseq a 0 ++ [seq e.+1 | e<-iwhere s].
+Proof.
+by rewrite/iwhere/=iwhere'S.
+Qed.
+
+Lemma iwhere_ones n : iwhere (nseq n 1) = iota 0 n.
+Proof.
+elim:n=>//=n. rewrite/iwhere/=iwhere'S=>->. by rewrite -[1]add1n iota_addl.
+Qed.
 
 (* Definition kfold (a f:K):K := match a with *)
 (*   | A a=> a | L _ _ a aa=> foldl  *)
