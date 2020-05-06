@@ -442,10 +442,14 @@ case: (i_dec i). case.
 scrush.
 Qed.
 
+Fixpoint iwhere' (i:nat) (s:seq nat) :=
+  if s is a::s then nseq a i ++ iwhere' i.+1 s else [::].
+Definition iwhere := iwhere' 0.
 
-Fixpoint iwhere' i s := if s is a::s then nseq a i::iwhere' i.+1 s else [::].
-Definition iwhere (s:seq nat) := flatten(iwhere' 0 s).
-
+Lemma iwhere'S i s : iwhere' i.+1 s = [seq a.+1 | a<-iwhere' i s].
+Proof.
+  elim:s i=>//=[n]s I i. by rewrite map_cat -I map_nseq.
+Qed.
 
 Lemma iwhere_x a : iwhere [::a] = nseq a 0.
 Proof.
