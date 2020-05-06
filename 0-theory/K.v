@@ -466,6 +466,13 @@ Proof.
 elim:b=>//=b. rewrite/iwhere/=iwhere'S=>->. by rewrite -[a.+1]add1n iota_addl.
 Qed.
 
+Lemma iwhere_where_xy a b : (iwhere \o iwhere) [::a;b] = iota a b.
+Proof.
+rewrite/comp/iwhere/=cats0. elim:a=>/=[|a]; first by rewrite iwhere_ones.
+rewrite iwhere'S=>->. by rewrite -[a.+1]add1n iota_addl.
+Qed.
+
+
 (* Definition kfold (a f:K):K := match a with *)
 (*   | A a=> a | L _ _ a aa=> foldl  *)
 
