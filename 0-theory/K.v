@@ -461,9 +461,9 @@ Proof.
 by rewrite/iwhere/=iwhere'S.
 Qed.
 
-Lemma iwhere_ones n : iwhere (nseq n 1) = iota 0 n.
+Lemma iwhere_ones a b : iwhere' a (nseq b 1) = iota a b.
 Proof.
-elim:n=>//=n. rewrite/iwhere/=iwhere'S=>->. by rewrite -[1]add1n iota_addl.
+elim:b=>//=b. rewrite/iwhere/=iwhere'S=>->. by rewrite -[a.+1]add1n iota_addl.
 Qed.
 
 (* Definition kfold (a f:K):K := match a with *)
