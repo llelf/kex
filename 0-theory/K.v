@@ -472,6 +472,9 @@ rewrite/comp/iwhere/=cats0. elim:a=>/=[|a]; first by rewrite iwhere_ones.
 rewrite iwhere'S=>->. by rewrite -[a.+1]add1n iota_addl.
 Qed.
 
+Lemma iwhere_size s : size (iwhere s) = sumn s.
+elim:s=>//=a s I. by rewrite iwhere_cons size_cat -I size_nseq size_map.
+Qed.
 
 (* Definition kfold (a f:K):K := match a with *)
 (*   | A a=> a | L _ _ a aa=> foldl  *)
