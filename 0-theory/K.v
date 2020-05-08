@@ -476,6 +476,29 @@ Lemma iwhere_size s : size (iwhere s) = sumn s.
 elim:s=>//=a s I. by rewrite iwhere_cons size_cat -I size_nseq size_map.
 Qed.
 
+Remark seqxxx ls s : [seq e + s.+1 | e <- ls] = [seq e.+1 + s | e <- ls].
+Proof.
+by apply/eq_map=>>/[rw addnS].
+Qed.
+
+Lemma where_cat s t : iwhere(s++t) = iwhere s ++ [seq e+size s|e<-iwhere t].
+Proof.
+elim:t s=>//=[s|a l I s]; first by rewrite ?cats0.
+rewrite iwhere_cons map_cat -map_comp.
+rewrite/comp. rewrite/iwhere in I*.
+rewrite -cat_rcons. rewrite I.
+rewrite size_rcons. rewrite seqxxx. rewrite catA. congr(_++_).
+elim:s=>//[|b s].
+- rewrite/=cats0. elim:a=>//=a. rewrite add0n. move->.
+  rewrite -map_comp. congr(_::_).
+  elim:nseq=>//=>. move->. rewrite -addnA. done.
+rewrite rcons_cons -/iwhere !iwhere_cons -catA.
+move=>H. congr(_++_). rewrite H. rewrite map_cat.
+congr(_++_). rewrite seqxxx.
+rewrite -map_comp. elim:nseq=>//.
+Qed.
+
+
 (* Definition kfold (a f:K):K := match a with *)
 (*   | A a=> a | L _ _ a aa=> foldl  *)
 
