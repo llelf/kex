@@ -11,8 +11,11 @@ From Coq        Require Import ZArith.
 Set Implicit Arguments.            Unset Strict Implicit.
 Unset Printing Implicit Defensive. Set Bullet Behavior "None".
 
-Notation "'[' 'rw' r1 ']'" :=
-  (ltac:(rewrite r1))(at level 0,r1 at level 0):ssripat_scope.
+Notation"[ 'rw' r ]" :=
+                   (ltac:(rewrite r))(at level 0,r at level 0):ssripat_scope.
+
+Lemma swap_forall A B (P:A->B->Type): (forall x y, P x y)->forall y x, P x y.
+Proof. firstorder. Qed.             Notation "[ 'sw' l ]" := (swap_forall l).
 
 Module opt.
 Fixpoint lift2 A B C (f:A->B->C) a b : option C :=
@@ -477,9 +480,7 @@ elim:s=>//=a s I. by rewrite iwhere_cons size_cat -I size_nseq size_map.
 Qed.
 
 Remark seqxxx ls s : [seq e + s.+1 | e <- ls] = [seq e.+1 + s | e <- ls].
-Proof.
-by apply/eq_map=>>/[rw addnS].
-Qed.
+Proof. exact/eq_map/[sw addnS]. Qed.
 
 Lemma iwhere_cat s t : iwhere(s++t) = iwhere s ++ [seq e+size s|e<-iwhere t].
 Proof.
