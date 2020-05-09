@@ -481,21 +481,18 @@ Proof.
 by apply/eq_map=>>/[rw addnS].
 Qed.
 
-Lemma where_cat s t : iwhere(s++t) = iwhere s ++ [seq e+size s|e<-iwhere t].
+Lemma iwhere_cat s t : iwhere(s++t) = iwhere s ++ [seq e+size s|e<-iwhere t].
 Proof.
 elim:t s=>//=[s|a l I s]; first by rewrite ?cats0.
 rewrite iwhere_cons map_cat -map_comp.
-rewrite/comp. rewrite/iwhere in I*.
+rewrite/iwhere in I*.
 rewrite -cat_rcons. rewrite I.
 rewrite size_rcons. rewrite seqxxx. rewrite catA. congr(_++_).
 elim:s=>//[|b s].
-- rewrite/=cats0. elim:a=>//=a. rewrite add0n. move->.
-  rewrite -map_comp. congr(_::_).
-  elim:nseq=>//=>. move->. rewrite -addnA. done.
-rewrite rcons_cons -/iwhere !iwhere_cons -catA.
-move=>H. congr(_++_). rewrite H. rewrite map_cat.
-congr(_++_). rewrite seqxxx.
-rewrite -map_comp. elim:nseq=>//.
+- rewrite/=cats0. elim:a=>//=a/[rw add0n]->.
+  rewrite -map_comp. congr(_::_). elim:nseq=>//=>[->]; by rewrite -addnA.
+rewrite rcons_cons -/iwhere !iwhere_cons -catA. move->. rewrite map_cat.
+congr(_++_). rewrite seqxxx. rewrite -map_comp. elim:nseq=>//.
 Qed.
 
 
