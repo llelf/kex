@@ -496,6 +496,19 @@ rewrite rcons_cons -/iwhere !iwhere_cons -catA. move->. rewrite map_cat.
 congr(_++_). rewrite seqxxx. rewrite -map_comp. elim:nseq=>//.
 Qed.
 
+From mathcomp Require Import ssrint.
+
+Fixpoint   itakep A(n:nat)(s:seq A): seq A := if n is n'.+1
+ then if n<size s then take n s else take 1 s ++ itakep n' (rot 1 s)
+ else [::].
+Definition itaken A(n:nat)(s:seq A):= drop (size s-n) s.
+Definition itake' A(n:int)(s:seq A):= match n with
+ Posz n=> itakep n s | Negz n=> itaken n s end.
+Definition itake A(n:int)(z:A)(s:seq A):= match n with
+ Posz n=> if s isn't [::] then itakep n s else nseq n z | Negz n=> itaken n s
+end.
+
+Lemma takep_nil A n : itakep n (@nil A) = [::].  Proof. by elim:n. Qed.
 
 (* Definition kfold (a f:K):K := match a with *)
 (*   | A a=> a | L _ _ a aa=> foldl  *)
