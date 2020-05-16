@@ -497,16 +497,26 @@ congr(_++_). rewrite seqxxx. rewrite -map_comp. elim:nseq=>//.
 Qed.
 
 From mathcomp Require Import ssrint.
+Require Import Program.
 
-Fixpoint   itakep A(n:nat)(s:seq A): seq A := if n is n'.+1
- then if n<size s then take n s else take 1 s ++ itakep n' (rot 1 s)
- else [::].
+Program Fixpoint itakep A(n:nat)(s:seq A){measure n}: seq A :=
+  if s isn't [::] then
+    (if n <= size s as r return (n <= size s = r -> _)
+       then fun pf => take n s
+       else fun pf => s ++ itakep (n - size s) s) erefl
+  else [::].
+Next Obligation.
+apply/ltP. move:H pf. case:s=>//=a l _. rewrite ltn_subrL. scrush.
+Defined.
+
+
 Definition itaken A(n:nat)(s:seq A):= drop (size s-n) s.
 Definition itake' A(n:int)(s:seq A):= match n with
  Posz n=> itakep n s | Negz n=> itaken n s end.
 Definition itake A(n:int)(z:A)(s:seq A):= match n with
  Posz n=> if s isn't [::] then itakep n s else nseq n z | Negz n=> itaken n s
 end.
+
 
 Lemma takep_nil A n : itakep n (@nil A) = [::].  Proof. by elim:n. Qed.
 
