@@ -527,7 +527,7 @@ Lemma size_takep A n z (s:seq A) : size (itakep n z s) = `|n|.
 Proof.
 case:s=>[/[rw size_nseq]//|a s]. rewrite size_takel//.
 elim:n=>//n. rewrite -addn1 nseq_addn/=. rewrite flatten_cat size_cat/=cats0/=.
-qcrush using (leq_addl,addn1,leq_add).
+move/leq_add. exact.
 Qed.
 
 (* Definition kfold (a f:K):K := match a with *)
