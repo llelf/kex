@@ -496,29 +496,37 @@ rewrite rcons_cons -/iwhere !iwhere_cons -catA. move->. rewrite map_cat.
 congr(_++_). rewrite seqxxx. rewrite -map_comp. elim:nseq=>//.
 Qed.
 
-From mathcomp Require Import ssrint.
-Require Import Program.
-
-Program Fixpoint itakep A(n:nat)(s:seq A){measure n}: seq A :=
+Program Fixpoint itakep_ A(n:nat)(s:seq A){measure n}: seq A :=
   if s isn't [::] then
     (if n <= size s as r return (n <= size s = r -> _)
        then fun pf => take n s
-       else fun pf => s ++ itakep (n - size s) s) erefl
+       else fun pf => s ++ itakep_ (n - size s) s) erefl
   else [::].
 Next Obligation.
 apply/ltP. move:H pf. case:s=>//=a l _. rewrite ltn_subrL. scrush.
 Defined.
 
+From mathcomp Require Import div.
+
+Definition itakep__ A(n:nat)(s:seq A) :=
+  if s isn't[::]then flatten(nseq (n %/ size s) s) ++ take (n %% size s) s
+  else[::].
+
+Definition itakep A(n:nat)(z:A)(s:seq A):seq A :=
+  if s isn't[::]then take n(flatten(nseq n s))
+  else nseq n z.
+
 
 Definition itaken A(n:nat)(s:seq A):= drop (size s-n) s.
-Definition itake' A(n:int)(s:seq A):= match n with
- Posz n=> itakep n s | Negz n=> itaken n s end.
+(* Definition itake' A(n:int)(s:seq A):= match n with *)
+(*  Posz n=> itakep n s | Negz n=> itaken n s end. *)
 Definition itake A(n:int)(z:A)(s:seq A):= match n with
- Posz n=> if s isn't [::] then itakep n s else nseq n z | Negz n=> itaken n s
+ Posz n=> if s isn't [::] then itakep n z s else nseq n z | Negz n=> itaken n s
 end.
 
 
-Lemma takep_nil A n : itakep n (@nil A) = [::].  Proof. by elim:n. Qed.
+(* Lemma takep_nil A n z : itakep n z (@nil A) = [::]. *)
+
 
 (* Definition kfold (a f:K):K := match a with *)
 (*   | A a=> a | L _ _ a aa=> foldl  *)
