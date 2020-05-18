@@ -527,6 +527,30 @@ end.
 
 (* Lemma takep_nil A n z : itakep n z (@nil A) = [::]. *)
 
+Lemma size_take A n z (s:seq A) : size (itakep n z s) = `|n|.
+Proof.
+elim:n. simpl.
+elim:s=>[|a s]. simpl. done.
+simpl.
+elim:s=>//.
+move=>n. simpl.
+elim:s=>//=. rewrite size_nseq. done.
+move=>a l. simpl.
+rewrite size_takel.
+rewrite size_takel.
+done.
+elim:n=>//n. rewrite -addn1 nseq_addn. simpl.
+rewrite !size_cat. rewrite flatten_cat. rewrite size_cat.
+rewrite addnA. simpl. rewrite cats0/=.
+qcrush using (leq_addl,addn1,leq_add).
+
+elim:n=>//n. rewrite -addn1 nseq_addn. simpl.
+rewrite flatten_cat. rewrite size_cat. simpl.
+rewrite cats0/=.
+qcrush using (leq_addl,addn1,leq_add).
+Qed.
+
+
 
 (* Definition kfold (a f:K):K := match a with *)
 (*   | A a=> a | L _ _ a aa=> foldl  *)
