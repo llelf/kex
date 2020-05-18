@@ -518,39 +518,17 @@ Definition itakep A(n:nat)(z:A)(s:seq A):seq A :=
 
 
 Definition itaken A(n:nat)(s:seq A):= drop (size s-n) s.
-(* Definition itake' A(n:int)(s:seq A):= match n with *)
-(*  Posz n=> itakep n s | Negz n=> itaken n s end. *)
+
 Definition itake A(n:int)(z:A)(s:seq A):= match n with
  Posz n=> if s isn't [::] then itakep n z s else nseq n z | Negz n=> itaken n s
 end.
 
-
-(* Lemma takep_nil A n z : itakep n z (@nil A) = [::]. *)
-
-Lemma size_take A n z (s:seq A) : size (itakep n z s) = `|n|.
+Lemma size_takep A n z (s:seq A) : size (itakep n z s) = `|n|.
 Proof.
-elim:n. simpl.
-elim:s=>[|a s]. simpl. done.
-simpl.
-elim:s=>//.
-move=>n. simpl.
-elim:s=>//=. rewrite size_nseq. done.
-move=>a l. simpl.
-rewrite size_takel.
-rewrite size_takel.
-done.
-elim:n=>//n. rewrite -addn1 nseq_addn. simpl.
-rewrite !size_cat. rewrite flatten_cat. rewrite size_cat.
-rewrite addnA. simpl. rewrite cats0/=.
-qcrush using (leq_addl,addn1,leq_add).
-
-elim:n=>//n. rewrite -addn1 nseq_addn. simpl.
-rewrite flatten_cat. rewrite size_cat. simpl.
-rewrite cats0/=.
+case:s=>[/[rw size_nseq]//|a s]. rewrite size_takel//.
+elim:n=>//n. rewrite -addn1 nseq_addn/=. rewrite flatten_cat size_cat/=cats0/=.
 qcrush using (leq_addl,addn1,leq_add).
 Qed.
-
-
 
 (* Definition kfold (a f:K):K := match a with *)
 (*   | A a=> a | L _ _ a aa=> foldl  *)
